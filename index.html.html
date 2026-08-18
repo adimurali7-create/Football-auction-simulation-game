@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ Football Auction Game</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070d1a;--card:#0e1d33;--card2:#152744;--border:#1b3557;
+  --green:#22c55e;--gold:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+  --p1:#60a5fa;--p2:#fbbf24;
+  --text:#f1f5f9;--muted:#7d9ab8;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-bottom:40px}
+
+.screen{display:none;width:100%;max-width:940px;padding:16px 20px;flex-direction:column;align-items:center;gap:16px}
+.screen.active{display:flex}
+
+.game-title{font-size:2.4rem;font-weight:900;background:linear-gradient(130deg,#22c55e 30%,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;padding:24px 0 4px}
+.game-sub{color:var(--muted);text-align:center;font-size:.95rem;margin-bottom:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%}
+
+.btn{padding:11px 26px;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .18s}
+.btn-primary{background:var(--green);color:#000}
+.btn-primary:hover:not(:disabled){background:#16a34a;transform:translateY(-1px)}
+.btn:disabled{background:#2a3a4a!important;color:#4a6070!important;cursor:not-allowed;transform:none!important;border-color:#2a3a4a!important}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover:not(:disabled){background:#d97706;transform:translateY(-1px)}
+.btn-red{background:transparent;border:1.5px solid var(--red);color:#f87171}
+.btn-red:hover:not(:disabled){background:rgba(239,68,68,.12)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover:not(:disabled){background:var(--card2)}
+.btn-sm{padding:7px 14px;font-size:.85rem;border-radius:8px}
+
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mode-card{padding:18px 12px;border:2px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card2)}
+.mode-card:hover{border-color:var(--green);background:rgba(34,197,94,.06)}
+.mode-card.selected{border-color:var(--green);background:rgba(34,197,94,.12)}
+.mode-size{font-size:2rem;font-weight:900;color:var(--green)}
+.mode-meta{font-size:.78rem;color:var(--muted);margin-top:4px;line-height:1.5}
+
+input[type=text],input[type=number],select{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-size:1rem;width:100%;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--green)}
+input::placeholder{color:#4a6070}
+label{font-size:.8rem;color:var(--muted);margin-bottom:5px;display:block}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.auction-layout{display:grid;grid-template-columns:1fr 250px;gap:14px;width:100%}
+
+.fc-card{background:linear-gradient(145deg,#0e1d33,#060d1b);border:2px solid var(--border);border-radius:20px;padding:24px;text-align:center;position:relative;overflow:hidden}
+.fc-card::before{content:'';position:absolute;top:-60%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(34,197,94,.04) 0%,transparent 65%);pointer-events:none}
+.pos-badge{display:inline-block;padding:3px 13px;border-radius:20px;font-size:.75rem;font-weight:800;letter-spacing:.8px}
+.pos-GK{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.4)}
+.pos-DEF{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.4)}
+.pos-MID{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.4)}
+.pos-ATT{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.4)}
+.fc-name{font-size:1.8rem;font-weight:900;line-height:1.1;margin:9px 0 5px}
+.fc-club{color:var(--muted);font-size:.9rem}
+.fc-nation{font-size:.82rem;color:var(--muted);margin-top:2px}
+.fc-rating{font-size:3.6rem;font-weight:900;color:var(--gold);margin:12px 0 2px;text-shadow:0 0 28px rgba(245,158,11,.25)}
+.fc-rating-lbl{font-size:.7rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.fc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat-v{font-size:1.05rem;font-weight:800}
+.stat-n{font-size:.68rem;color:var(--muted);margin-top:1px}
+.natural-note{font-size:.72rem;color:var(--muted);margin-top:12px;font-style:italic}
+
+.sidebar{display:flex;flex-direction:column;gap:10px}
+.budget-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px;transition:border-color .25s}
+.budget-card.turn-active{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.p-label{font-weight:700;font-size:.88rem;margin-bottom:5px}
+.p1-lbl{color:var(--p1)}.p2-lbl{color:var(--p2)}
+.budget-amt{font-size:1.4rem;font-weight:900}
+.budget-info{font-size:.72rem;color:var(--muted);margin-top:2px}
+.bar-wrap{background:var(--bg);border-radius:4px;height:6px;margin:8px 0;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.bar-p1{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.bar-p2{background:linear-gradient(90deg,#d97706,#fbbf24)}
+.squad-count{font-size:.75rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.squad-count b{color:var(--text)}
+.roster{display:flex;flex-direction:column;gap:2px;margin-top:5px;max-height:150px;overflow-y:auto}
+.roster-row{display:flex;gap:5px;align-items:center;font-size:.72rem}
+.roster-pos{font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:8px;flex-shrink:0}
+.roster-name{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.auction-topbar{display:flex;justify-content:space-between;align-items:center;width:100%;gap:10px}
+.auction-ctr{font-size:.85rem;color:var(--muted)}
+.dots-wrap{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.a-dot{width:9px;height:9px;border-radius:50%;background:var(--border)}
+.a-dot.done{background:var(--green)}
+.a-dot.cur{background:var(--gold)}
+
+/* ── Turn-based bid box ── */
+.bidbox{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;width:100%}
+.cur-bid-strip{display:flex;justify-content:center;align-items:baseline;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.cb-lbl{font-size:.8rem;color:var(--muted)}
+.cb-amt{font-size:2.4rem;font-weight:900;color:var(--gold);line-height:1}
+.cb-by{font-size:.85rem;font-weight:700}
+.turn-banner{text-align:center;font-size:1.15rem;font-weight:800;padding:11px;border-radius:11px;margin-bottom:14px;transition:all .25s}
+.tb-p1{background:rgba(59,130,246,.15);color:var(--p1);border:1px solid rgba(59,130,246,.4)}
+.tb-p2{background:rgba(245,158,11,.15);color:var(--p2);border:1px solid rgba(245,158,11,.4)}
+.bid-controls{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+.quick-raises{display:flex;gap:7px;justify-content:center;margin-top:11px;flex-wrap:wrap}
+.qr-btn{padding:5px 13px;background:var(--card2);border:1px solid var(--border);border-radius:16px;color:var(--muted);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .16s}
+.qr-btn:hover{border-color:var(--green);color:var(--green)}
+.max-note{text-align:center;font-size:.75rem;color:var(--muted);margin-top:9px}
+.bid-log{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;max-height:110px;overflow-y:auto}
+.bl-row{font-size:.78rem;display:flex;gap:7px;align-items:center;animation:slideDown .3s ease}
+.bl-tag{font-size:.62rem;font-weight:800;padding:1px 6px;border-radius:8px}
+.bl-p1{background:rgba(59,130,246,.18);color:var(--p1)}
+.bl-p2{background:rgba(245,158,11,.18);color:var(--p2)}
+.bl-txt{color:var(--muted)}
+.bl-txt b{color:var(--text)}
+.uncontested-note{text-align:center;padding:12px;background:var(--card2);border-radius:10px;font-size:.88rem;color:var(--muted)}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.overlay.show{display:flex}
+.rev-card{background:var(--card);border:2px solid var(--border);border-radius:20px;padding:30px;max-width:460px;width:100%;text-align:center;animation:popIn .28s ease}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slideDown{from{transform:translateY(-6px);opacity:0}to{transform:translateY(0);opacity:1}}
+.sold-stamp{font-size:2.6rem;font-weight:900;color:var(--green);letter-spacing:3px;margin-bottom:6px}
+.rev-fc-name{font-size:1.4rem;font-weight:900;margin-bottom:3px}
+.rev-fc-sub{font-size:.82rem;color:var(--muted);margin-bottom:18px}
+.win-banner{padding:14px;border-radius:11px;font-size:1rem;font-weight:700;margin-bottom:16px}
+.win-p1{background:rgba(59,130,246,.18);color:var(--p1);border:1px solid rgba(59,130,246,.4)}
+.win-p2{background:rgba(245,158,11,.18);color:var(--p2);border:1px solid rgba(245,158,11,.4)}
+.win-free{background:rgba(125,154,184,.12);color:var(--text);border:1px solid var(--border);font-weight:500;line-height:1.6}
+.win-price{font-size:1.8rem;font-weight:900;display:block;margin-top:5px}
+.sold-stamp.unsold{color:var(--muted);letter-spacing:2px}
+.sold-stamp.backlog{color:var(--gold);font-size:2rem;letter-spacing:2px}
+.phase-pill{display:inline-block;background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.4);padding:2px 10px;border-radius:12px;font-size:.72rem;font-weight:800;margin-right:7px}
+.backlog-pill{display:inline-block;background:var(--card2);border:1px solid var(--border);color:var(--muted);padding:2px 10px;border-radius:12px;font-size:.72rem;font-weight:700;margin-left:7px}
+
+/* ── Assignment screen ── */
+.assign-head{text-align:center}
+.assign-who{font-size:1.6rem;font-weight:900;margin-bottom:4px}
+.assign-grid{display:grid;grid-template-columns:1fr;gap:9px;width:100%}
+.slot-row2{display:grid;grid-template-columns:58px 1fr 90px;gap:11px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 14px}
+.slot-tag{font-size:.72rem;font-weight:800;padding:5px 0;border-radius:8px;text-align:center}
+.slot-sel{padding:9px 11px;font-size:.9rem}
+.fit-badge{font-size:.75rem;font-weight:800;text-align:center;padding:5px;border-radius:8px}
+.fit-perfect{background:rgba(34,197,94,.15);color:#4ade80}
+.fit-ok{background:rgba(245,158,11,.15);color:var(--gold)}
+.fit-bad{background:rgba(239,68,68,.15);color:#f87171}
+.fit-empty{background:var(--card2);color:var(--muted)}
+.assign-actions{display:flex;gap:11px;justify-content:center;flex-wrap:wrap}
+.bench-note{font-size:.8rem;color:var(--muted);text-align:center}
+
+.teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}
+.team-card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:18px}
+.team-card.tc-p1{border-color:#2563eb}.team-card.tc-p2{border-color:#b45309}
+.team-head{font-size:1.15rem;font-weight:800;margin-bottom:13px}
+.tc-p1 .team-head{color:var(--p1)}.tc-p2 .team-head{color:var(--p2)}
+.tp-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.tp-row:last-child{border-bottom:none}
+.tp-name{flex:1;font-size:.86rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-oop{font-size:.62rem;color:#f87171;font-weight:700}
+.tp-rtg{font-size:.9rem;font-weight:900;color:var(--gold);min-width:26px;text-align:right}
+.team-foot{display:flex;justify-content:space-between;margin-top:12px;font-size:.78rem;color:var(--muted)}
+.team-foot span{color:var(--text);font-weight:700}
+
+.match-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;width:100%;text-align:center}
+.mh-team{font-size:1.25rem;font-weight:800}
+.mh-score{font-size:3rem;font-weight:900;padding:8px 20px;background:var(--card2);border:1px solid var(--border);border-radius:12px;min-width:126px;display:flex;align-items:center;justify-content:center;gap:8px}
+.mh-dash{color:var(--muted);font-size:1.9rem}
+.sim-prog-meta{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:5px}
+.sim-prog-bar{background:var(--card2);border-radius:3px;height:5px;overflow:hidden}
+.sim-prog-fill{height:100%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:3px;transition:width .35s}
+.commentary{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;width:100%;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.cm-item{display:flex;gap:10px;align-items:flex-start;animation:slideDown .35s ease}
+.cm-min{background:var(--card2);padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:800;color:var(--green);flex-shrink:0;min-width:38px;text-align:center}
+.cm-min.goal{background:rgba(245,158,11,.2);color:var(--gold);border:1px solid rgba(245,158,11,.4)}
+.cm-txt{font-size:.85rem;color:var(--muted);line-height:1.4}
+.cm-txt strong{color:var(--text)}
+
+.result-score-block{display:flex;align-items:center;gap:26px;justify-content:center}
+.rs-name{font-size:1rem;font-weight:700;margin-bottom:4px}
+.rs-num{font-size:4.6rem;font-weight:900;line-height:1}
+.rs-dash{font-size:2.4rem;color:var(--muted);font-weight:300}
+.result-verdict{font-size:1.45rem;font-weight:900;text-align:center;margin-top:8px}
+.rv-win{color:var(--green)}.rv-draw{color:var(--gold)}
+.result-scorers{margin-top:12px;font-size:.85rem;color:var(--muted);text-align:center;line-height:1.8}
+
+@media(max-width:680px){
+  .auction-layout,.teams-grid,.mode-grid,.two-col{grid-template-columns:1fr}
+  .bid-controls{grid-template-columns:1fr}
+  .slot-row2{grid-template-columns:50px 1fr 74px;gap:8px;padding:9px}
+  .fc-name{font-size:1.4rem}.fc-rating{font-size:2.6rem}
+  .mh-score{font-size:2.1rem;padding:6px 13px}.match-header{gap:8px}
+  .rs-num{font-size:3.2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ PLAY MODE ══════════ -->
+<div id="screen-playmode" class="screen active">
+  <div style="width:100%">
+    <div class="game-title">⚽ Auction Football</div>
+    <div class="game-sub">Bid for anyone. Build your squad. Pick your formation. Win the match.</div>
+  </div>
+  <div class="card" style="max-width:600px;display:flex;flex-direction:column;gap:14px">
+    <div class="mode-card" style="text-align:left;padding:18px 20px" onclick="showScreen('setup')">
+      <div style="font-weight:800;font-size:1.1rem;margin-bottom:4px">📱 Play on this device</div>
+      <div class="mode-meta">Two players, one screen — pass the device to bid.</div>
+    </div>
+    <div class="mode-card" style="text-align:left;padding:18px 20px" onclick="enterOnlineEntry()">
+      <div style="font-weight:800;font-size:1.1rem;margin-bottom:4px">🌐 Play online</div>
+      <div class="mode-meta">Two separate devices — create a room, share the code, bid from anywhere.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ONLINE ENTRY ══════════ -->
+<div id="screen-online-entry" class="screen">
+  <div style="width:100%">
+    <div class="game-title" style="font-size:2rem">🌐 Play Online</div>
+    <div class="game-sub">Create a room, or join one with a code.</div>
+  </div>
+
+  <div class="card" id="oe-rejoin-card" style="max-width:520px;display:none">
+    <div id="oe-rejoin-note" class="bench-note"></div>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <button class="btn btn-primary btn-sm" onclick="rejoinSavedRoom()">Rejoin room</button>
+      <button class="btn btn-outline btn-sm" onclick="forgetSavedRoom()">Start fresh instead</button>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:520px">
+    <label>Your name</label>
+    <input type="text" id="oe-name" placeholder="Enter name…" oninput="oeCheck()">
+  </div>
+
+  <div class="card" style="max-width:520px">
+    <h2 style="margin-bottom:12px;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Create a Room</h2>
+    <div class="game-sub" style="margin-bottom:12px">You'll get a short code to send your opponent.</div>
+    <button class="btn btn-primary" id="oe-create-btn" onclick="createRoom()" disabled style="width:100%">Create Room →</button>
+  </div>
+
+  <div class="card" style="max-width:520px">
+    <h2 style="margin-bottom:12px;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Join a Room</h2>
+    <div class="two-col">
+      <input type="text" id="oe-code" placeholder="Room code" maxlength="5" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();oeCheck()">
+      <button class="btn btn-gold" id="oe-join-btn" onclick="joinRoom()" disabled>Join Room →</button>
+    </div>
+  </div>
+
+  <div class="bench-note" id="oe-error" style="color:#f87171"></div>
+  <button class="btn btn-outline btn-sm" onclick="showScreen('playmode')">← Back</button>
+</div>
+
+<!-- ══════════ LOBBY ══════════ -->
+<div id="screen-lobby" class="screen">
+  <div style="width:100%">
+    <div class="game-title" style="font-size:2rem">🚪 Room <span id="lb-code" style="color:var(--gold)"></span></div>
+    <div class="game-sub">Share the room code above with your opponent.</div>
+  </div>
+
+  <div class="card" style="max-width:520px">
+    <div class="two-col">
+      <div class="budget-card"><div class="p-label p1-lbl" id="lb-name-0">—</div><div class="bench-note">Host</div></div>
+      <div class="budget-card"><div class="p-label p2-lbl" id="lb-name-1">Waiting…</div><div class="bench-note">Guest</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:520px" id="lb-host-controls">
+    <h2 style="margin-bottom:14px;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Choose Mode</h2>
+    <div class="mode-grid" id="lb-mode-grid">
+      <div class="mode-card" onclick="lobbySelectMode('5v5',this)">
+        <div class="mode-size">5v5</div><div class="mode-meta">10 in the pool</div>
+      </div>
+      <div class="mode-card" onclick="lobbySelectMode('7v7',this)">
+        <div class="mode-size">7v7</div><div class="mode-meta">14 in the pool</div>
+      </div>
+      <div class="mode-card" onclick="lobbySelectMode('11v11',this)">
+        <div class="mode-size">11v11</div><div class="mode-meta">22 in the pool</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="lb-start-btn" onclick="hostStartOnlineGame()" disabled style="width:100%;margin-top:16px">Start Auction →</button>
+  </div>
+  <div class="bench-note" id="lb-guest-wait" style="display:none">⏳ Waiting for the host to pick a mode and start…</div>
+</div>
+
+<!-- ══════════ SETUP (local, same-device) ══════════ -->
+<div id="screen-setup" class="screen">
+  <div style="width:100%">
+    <div class="game-title">⚽ Auction Football</div>
+    <div class="game-sub">Bid for anyone. Build your squad. Pick your formation. Win the match.</div>
+  </div>
+
+  <div class="card" style="max-width:600px">
+    <h2 style="margin-bottom:14px;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Choose Mode</h2>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="selectMode('5v5',this)">
+        <div class="mode-size">5v5</div>
+        <div class="mode-meta">10 in the pool<br>1 GK · 2 DEF · 1 MID · 1 ATT</div>
+      </div>
+      <div class="mode-card" onclick="selectMode('7v7',this)">
+        <div class="mode-size">7v7</div>
+        <div class="mode-meta">14 in the pool<br>1 GK · 2 DEF · 2 MID · 2 ATT</div>
+      </div>
+      <div class="mode-card" onclick="selectMode('11v11',this)">
+        <div class="mode-size">11v11</div>
+        <div class="mode-meta">22 in the pool<br>1 GK · 4 DEF · 3 MID · 3 ATT</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:600px">
+    <h2 style="margin-bottom:14px;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Player Names</h2>
+    <div class="two-col">
+      <div><label>Player 1</label><input type="text" id="name-p1" placeholder="Enter name…" oninput="checkStart()"></div>
+      <div><label>Player 2</label><input type="text" id="name-p2" placeholder="Enter name…" oninput="checkStart()"></div>
+    </div>
+    <div style="margin-top:16px;padding:12px 14px;background:var(--card2);border-radius:9px;font-size:.8rem;color:var(--muted);line-height:1.7">
+      💰 <strong style="color:var(--text)">1,000 coins</strong> each &nbsp;·&nbsp; opening bid minimum <strong style="color:var(--text)">1 coin</strong><br>
+      🔁 Turn-based auction — raise or pass until someone gives way<br>
+      🎯 Bid on <strong style="color:var(--text)">any</strong> footballer; assign positions after the auction<br>
+      ✋ Don't want them? Decline — if both decline they go to the <strong style="color:var(--text)">backlog</strong><br>
+      📦 Backlog footballers are re-auctioned at the end to fill empty slots<br>
+      🛡 You always keep enough coins to fill your remaining slots
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="start-btn" onclick="startGame()" disabled style="min-width:200px;font-size:1.05rem">Start Auction →</button>
+</div>
+
+<!-- ══════════ AUCTION ══════════ -->
+<div id="screen-auction" class="screen">
+  <div class="auction-topbar">
+    <div class="auction-ctr" id="a-ctr"></div>
+    <div class="dots-wrap" id="a-dots"></div>
+  </div>
+
+  <div class="auction-layout">
+    <div class="fc-card">
+      <div class="pos-badge" id="fc-pos">GK</div>
+      <div class="fc-name" id="fc-name">—</div>
+      <div class="fc-club" id="fc-club">—</div>
+      <div class="fc-nation" id="fc-nation">—</div>
+      <div class="fc-rating" id="fc-rating">—</div>
+      <div class="fc-rating-lbl">Overall Rating</div>
+      <div class="fc-stats" id="fc-stats"></div>
+      <div class="natural-note" id="fc-natural"></div>
+    </div>
+
+    <div class="sidebar">
+      <div class="budget-card" id="bcard-0">
+        <div class="p-label p1-lbl" id="sb-name-0">Player 1</div>
+        <div class="budget-amt" id="sb-budget-0">1,000</div>
+        <div class="budget-info" id="sb-spent-0">Spent: 0</div>
+        <div class="bar-wrap"><div class="bar-fill bar-p1" id="bar-0" style="width:100%"></div></div>
+        <div class="squad-count" id="sq-0">Squad: <b>0</b>/5</div>
+        <div class="roster" id="roster-0"></div>
+      </div>
+      <div class="budget-card" id="bcard-1">
+        <div class="p-label p2-lbl" id="sb-name-1">Player 2</div>
+        <div class="budget-amt" id="sb-budget-1">1,000</div>
+        <div class="budget-info" id="sb-spent-1">Spent: 0</div>
+        <div class="bar-wrap"><div class="bar-fill bar-p2" id="bar-1" style="width:100%"></div></div>
+        <div class="squad-count" id="sq-1">Squad: <b>0</b>/5</div>
+        <div class="roster" id="roster-1"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bidbox">
+    <div class="cur-bid-strip">
+      <span class="cb-lbl">Current bid</span>
+      <span class="cb-amt" id="cb-amt">—</span>
+      <span class="cb-by" id="cb-by"></span>
+    </div>
+    <div id="bid-area">
+      <div class="turn-banner" id="turn-banner">—</div>
+      <div class="bid-controls">
+        <input type="number" id="bid-input" placeholder="Enter amount…" onkeydown="if(event.key==='Enter')placeBid()">
+        <button class="btn btn-primary" id="bid-btn" onclick="placeBid()">Place Bid</button>
+        <button class="btn btn-red" id="pass-btn" onclick="passBid()">Pass ✋</button>
+      </div>
+      <div class="quick-raises" id="quick-raises"></div>
+      <div class="max-note" id="max-note"></div>
+    </div>
+    <div class="uncontested-note" id="uncontested-note" style="display:none"></div>
+    <div class="bid-log" id="bid-log"></div>
+  </div>
+</div>
+
+<!-- Sold overlay -->
+<div class="overlay" id="overlay">
+  <div class="rev-card">
+    <div class="sold-stamp" id="sold-stamp">SOLD!</div>
+    <div class="rev-fc-name" id="ov-name"></div>
+    <div class="rev-fc-sub" id="ov-sub"></div>
+    <div class="win-banner" id="ov-banner"></div>
+    <button class="btn btn-primary" id="ov-next-btn" style="width:100%">⏭ Next Footballer →</button>
+  </div>
+</div>
+
+<!-- ══════════ ASSIGNMENT ══════════ -->
+<div id="screen-assign" class="screen">
+  <div class="assign-head">
+    <div class="game-title" style="font-size:1.7rem;padding:12px 0 2px">📋 Pick Your Formation</div>
+    <div class="assign-who" id="as-who"></div>
+    <div class="game-sub" id="as-sub">Assign each footballer to a slot. Playing out of position costs rating.</div>
+  </div>
+  <div id="as-live">
+    <div class="assign-grid" id="assign-grid"></div>
+    <div class="bench-note" id="as-bench"></div>
+    <div class="assign-actions">
+      <button class="btn btn-outline btn-sm" onclick="autoAssign()">⚡ Auto-assign best fit</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAssign()">↺ Clear</button>
+      <button class="btn btn-primary" id="as-next" onclick="confirmAssign()" disabled>Confirm Lineup →</button>
+    </div>
+  </div>
+  <div id="as-waiting" class="card" style="display:none;text-align:center;color:var(--muted)"></div>
+</div>
+
+<!-- ══════════ TEAMS ══════════ -->
+<div id="screen-teams" class="screen">
+  <div style="text-align:center">
+    <div class="game-title" style="font-size:1.8rem;padding:10px 0 4px">🏟 Line-ups Confirmed</div>
+    <div class="game-sub">Ratings shown are effective — adjusted for position.</div>
+  </div>
+  <div class="teams-grid" id="teams-grid"></div>
+  <button class="btn btn-gold" id="kickoff-btn" onclick="goToSim()" style="min-width:220px;font-size:1.05rem">⚽ Kick Off →</button>
+  <div class="bench-note" id="kickoff-wait" style="display:none">⏳ Waiting for the host to kick off…</div>
+</div>
+
+<!-- ══════════ SIMULATION ══════════ -->
+<div id="screen-simulation" class="screen">
+  <div class="card" style="max-width:720px">
+    <div class="match-header">
+      <div style="text-align:right"><div class="mh-team" id="sim-t1" style="color:var(--p1)"></div></div>
+      <div class="mh-score">
+        <span id="sim-s1" style="color:var(--p1)">0</span>
+        <span class="mh-dash">–</span>
+        <span id="sim-s2" style="color:var(--p2)">0</span>
+      </div>
+      <div style="text-align:left"><div class="mh-team" id="sim-t2" style="color:var(--p2)"></div></div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="sim-prog-meta"><span id="sim-min-lbl">Kick-off…</span><span id="sim-min-num" style="color:var(--green)"></span></div>
+      <div class="sim-prog-bar"><div class="sim-prog-fill" id="sim-prog" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="commentary" id="commentary"></div>
+</div>
+
+<!-- ══════════ RESULT ══════════ -->
+<div id="screen-result" class="screen">
+  <div class="game-title" style="font-size:2rem;padding:16px 0 4px">⏱ Full Time!</div>
+  <div class="card" style="max-width:580px">
+    <div class="result-score-block">
+      <div><div class="rs-name" id="rs-n1" style="color:var(--p1)"></div><div class="rs-num" id="rs-s1" style="color:var(--p1)"></div></div>
+      <div class="rs-dash">–</div>
+      <div><div class="rs-name" id="rs-n2" style="color:var(--p2)"></div><div class="rs-num" id="rs-s2" style="color:var(--p2)"></div></div>
+    </div>
+    <div class="result-verdict" id="rs-verdict"></div>
+    <div class="result-scorers" id="rs-scorers"></div>
+  </div>
+  <div class="teams-grid" id="result-grid" style="max-width:740px"></div>
+  <button class="btn btn-primary" onclick="location.reload()" style="min-width:200px;margin-top:4px">🔄 Play Again</button>
+</div>
+
+<!-- Online multiplayer uses Supabase purely as a shared-state relay between the
+     two players' browsers (no accounts, no server code of ours). Loaded from CDN
+     so the game stays a single file with no build step. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PLAYER DATABASE — ~240 real footballers
+   Compact format: [name, club, nationality, overall, stat1, stat2, stat3]
+   Ratings are EA FC 26 approximations. Clubs reflect recent squads and are
+   easy to update: each entry is one line.
+   Stat labels differ per position (see STAT_LABELS below).
+═══════════════════════════════════════════════════════════════ */
+const STAT_LABELS = {
+  GK:  ['Reflexes','Handling','Positioning'],
+  DEF: ['Defending','Pace','Physical'],
+  MID: ['Passing','Dribbling','Physical'],
+  ATT: ['Shooting','Pace','Dribbling'],
+};
+
+const RAW = {
+GK: [
+["Alisson Becker","Liverpool","🇧🇷 Brazil",90,90,88,91],
+["Thibaut Courtois","Real Madrid","🇧🇪 Belgium",90,91,87,90],
+["Gianluigi Donnarumma","PSG","🇮🇹 Italy",89,90,86,89],
+["Ederson","Man City","🇧🇷 Brazil",88,86,88,87],
+["Marc-André ter Stegen","Barcelona","🇩🇪 Germany",88,89,86,87],
+["Mike Maignan","AC Milan","🇫🇷 France",87,88,85,88],
+["Manuel Neuer","Bayern Munich","🇩🇪 Germany",87,86,89,88],
+["Jan Oblak","Atletico Madrid","🇸🇮 Slovenia",87,88,86,88],
+["David Raya","Arsenal","🇪🇸 Spain",86,87,85,86],
+["Gregor Kobel","Dortmund","🇨🇭 Switzerland",86,87,84,85],
+["Yann Sommer","Inter Milan","🇨🇭 Switzerland",85,85,84,86],
+["Emiliano Martínez","Aston Villa","🇦🇷 Argentina",85,86,83,85],
+["Diogo Costa","Porto","🇵🇹 Portugal",85,86,84,84],
+["Jordan Pickford","Everton","🏴 England",84,84,82,85],
+["Andriy Lunin","Real Madrid","🇺🇦 Ukraine",84,85,83,84],
+["Wojciech Szczesny","Barcelona","🇵🇱 Poland",84,84,83,85],
+["Alex Meret","Napoli","🇮🇹 Italy",83,84,82,83],
+["Nick Pope","Newcastle","🏴 England",83,83,81,84],
+["Bart Verbruggen","Brighton","🇳🇱 Netherlands",82,83,80,82],
+["Guglielmo Vicario","Tottenham","🇮🇹 Italy",82,83,81,82],
+["Robert Sánchez","Chelsea","🇪🇸 Spain",81,82,79,81],
+["Lukasz Fabianski","West Ham","🇵🇱 Poland",80,80,79,81],
+["Bernd Leno","Fulham","🇩🇪 Germany",80,81,79,80],
+["Anatoliy Trubin","Benfica","🇺🇦 Ukraine",80,81,79,79],
+["Caoimhin Kelleher","Liverpool","🇮🇪 Ireland",79,80,78,79],
+["Dean Henderson","Crystal Palace","🏴 England",78,79,77,78],
+["Altay Bayindir","Man United","🇹🇷 Turkey",76,77,75,76],
+["Wes Foderingham","Sheffield Utd","🏴 England",74,75,73,74],
+["Sam Johnstone","Wolves","🏴 England",74,74,73,75],
+["Mark Flekken","Brentford","🇳🇱 Netherlands",73,74,72,73],
+],
+DEF: [
+["Virgil van Dijk","Liverpool","🇳🇱 Netherlands",89,90,82,90],
+["Rúben Dias","Man City","🇵🇹 Portugal",89,90,78,88],
+["Antonio Rüdiger","Real Madrid","🇩🇪 Germany",88,88,83,88],
+["William Saliba","Arsenal","🇫🇷 France",88,88,85,87],
+["Achraf Hakimi","PSG","🇲🇦 Morocco",87,80,93,78],
+["Theo Hernández","AC Milan","🇫🇷 France",87,79,90,85],
+["Marquinhos","PSG","🇧🇷 Brazil",87,88,80,82],
+["Alessandro Bastoni","Inter Milan","🇮🇹 Italy",87,86,76,82],
+["Trent Alexander-Arnold","Liverpool","🏴 England",87,77,80,74],
+["Kyle Walker","Man City","🏴 England",86,82,93,80],
+["Eder Militão","Real Madrid","🇧🇷 Brazil",86,86,83,83],
+["Jules Koundé","Barcelona","🇫🇷 France",86,85,84,76],
+["Ronald Araújo","Barcelona","🇺🇾 Uruguay",86,87,82,87],
+["Josko Gvardiol","Man City","🇭🇷 Croatia",86,86,81,86],
+["Dayot Upamecano","Bayern Munich","🇫🇷 France",85,85,86,86],
+["Micky van de Ven","Tottenham","🇳🇱 Netherlands",85,84,94,83],
+["Gabriel Magalhães","Arsenal","🇧🇷 Brazil",85,86,79,87],
+["Cristian Romero","Tottenham","🇦🇷 Argentina",85,86,80,85],
+["Federico Dimarco","Inter Milan","🇮🇹 Italy",85,79,84,74],
+["Alphonso Davies","Bayern Munich","🇨🇦 Canada",85,79,95,76],
+["Nuno Mendes","PSG","🇵🇹 Portugal",84,81,89,76],
+["Ferland Mendy","Real Madrid","🇫🇷 France",84,83,87,78],
+["Matthijs de Ligt","Man United","🇳🇱 Netherlands",84,85,77,85],
+["Lisandro Martínez","Man United","🇦🇷 Argentina",84,85,78,80],
+["Ibrahima Konaté","Liverpool","🇫🇷 France",84,84,86,87],
+["Andrew Robertson","Liverpool","🏴 England",84,80,80,74],
+["Benjamin Pavard","Inter Milan","🇫🇷 France",83,83,78,80],
+["Antonio Silva","Benfica","🇵🇹 Portugal",83,83,80,82],
+["Destiny Udogie","Tottenham","🇮🇹 Italy",83,80,88,78],
+["Jeremie Frimpong","Bayer Leverkusen","🇳🇱 Netherlands",83,76,94,72],
+["Jonathan Tah","Bayer Leverkusen","🇩🇪 Germany",83,84,80,86],
+["Pau Cubarsí","Barcelona","🇪🇸 Spain",83,83,78,76],
+["Manuel Akanji","Man City","🇨🇭 Switzerland",83,84,80,82],
+["Nathan Aké","Man City","🇳🇱 Netherlands",83,83,80,80],
+["Milan Skriniar","PSG","🇸🇰 Slovakia",83,84,78,85],
+["Malo Gusto","Chelsea","🇫🇷 France",82,79,87,74],
+["Levi Colwill","Chelsea","🏴 England",82,82,76,80],
+["Marc Cucurella","Chelsea","🇪🇸 Spain",82,80,80,74],
+["Kieran Trippier","Newcastle","🏴 England",82,78,72,72],
+["Sven Botman","Newcastle","🇳🇱 Netherlands",82,83,79,84],
+["Riccardo Calafiori","Arsenal","🇮🇹 Italy",82,81,79,80],
+["Ben White","Arsenal","🏴 England",82,81,79,78],
+["Giovanni Di Lorenzo","Napoli","🇮🇹 Italy",82,82,78,76],
+["Amir Rrahmani","Napoli","🇽🇰 Kosovo",82,83,76,84],
+["Gleison Bremer","Juventus","🇧🇷 Brazil",82,84,78,86],
+["Andrea Cambiaso","Juventus","🇮🇹 Italy",81,78,83,74],
+["Denzel Dumfries","Inter Milan","🇳🇱 Netherlands",81,78,86,84],
+["Yan Couto","Dortmund","🇧🇷 Brazil",81,76,88,68],
+["Nico Schlotterbeck","Dortmund","🇩🇪 Germany",81,82,80,80],
+["Willi Orbán","RB Leipzig","🇭🇺 Hungary",81,82,74,84],
+["David Hancko","Feyenoord","🇸🇰 Slovakia",81,81,78,82],
+["Nicolás Tagliafico","Lyon","🇦🇷 Argentina",80,80,80,76],
+["Robin Le Normand","Atletico Madrid","🇪🇸 Spain",80,82,76,82],
+["José Giménez","Atletico Madrid","🇺🇾 Uruguay",80,83,74,85],
+["Nahuel Molina","Atletico Madrid","🇦🇷 Argentina",80,78,85,72],
+["Pedro Porro","Tottenham","🇪🇸 Spain",80,76,85,72],
+["Pervis Estupiñán","Brighton","🇪🇨 Ecuador",80,79,84,76],
+["Lewis Dunk","Brighton","🏴 England",80,82,64,84],
+["Diogo Dalot","Man United","🇵🇹 Portugal",80,78,82,74],
+["Noussair Mazraoui","Man United","🇲🇦 Morocco",80,79,84,73],
+["Ezri Konsa","Aston Villa","🏴 England",80,80,82,80],
+["Pau Torres","Aston Villa","🇪🇸 Spain",80,81,72,79],
+["Lucas Digne","Aston Villa","🇫🇷 France",79,78,78,72],
+["Fabian Schär","Newcastle","🇨🇭 Switzerland",79,80,76,82],
+["Dan Burn","Newcastle","🏴 England",78,79,66,86],
+["Joachim Andersen","Fulham","🇩🇰 Denmark",79,80,72,82],
+["Rayan Aït-Nouri","Wolves","🇩🇿 Algeria",79,76,86,72],
+["Jarrad Branthwaite","Everton","🏴 England",79,80,78,84],
+["Vitaliy Mykolenko","Everton","🇺🇦 Ukraine",78,78,80,74],
+["Nathan Collins","Brentford","🇮🇪 Ireland",78,79,74,84],
+["Maxence Lacroix","Crystal Palace","🇫🇷 France",78,79,80,82],
+["Tyrick Mitchell","Crystal Palace","🏴 England",77,76,86,70],
+["Emerson Royal","AC Milan","🇧🇷 Brazil",77,76,82,76],
+["Kristoffer Ajer","Brentford","🇳🇴 Norway",76,77,80,82],
+["Max Kilman","West Ham","🏴 England",76,78,72,82],
+["Konstantinos Mavropanos","West Ham","🇬🇷 Greece",75,76,76,82],
+["Ola Aina","Nottingham Forest","🇳🇬 Nigeria",75,74,86,76],
+["Neco Williams","Nottingham Forest","🏴 Wales",74,73,84,70],
+["Jurriën Timber","Arsenal","🇳🇱 Netherlands",83,83,82,76],
+],
+MID: [
+["Jude Bellingham","Real Madrid","🏴 England",91,85,89,87],
+["Rodri","Man City","🇪🇸 Spain",91,90,79,85],
+["Kevin De Bruyne","Man City","🇧🇪 Belgium",91,94,87,76],
+["Florian Wirtz","Bayer Leverkusen","🇩🇪 Germany",89,86,91,67],
+["Pedri","Barcelona","🇪🇸 Spain",89,88,90,68],
+["Fede Valverde","Real Madrid","🇺🇾 Uruguay",88,82,84,87],
+["Martin Ødegaard","Arsenal","🇳🇴 Norway",88,88,87,72],
+["Khvicha Kvaratskhelia","PSG","🇬🇪 Georgia",88,80,92,72],
+["Luka Modric","Real Madrid","🇭🇷 Croatia",87,91,88,68],
+["Nicolò Barella","Inter Milan","🇮🇹 Italy",87,83,85,83],
+["Frenkie de Jong","Barcelona","🇳🇱 Netherlands",87,87,89,78],
+["Joshua Kimmich","Bayern Munich","🇩🇪 Germany",87,89,80,78],
+["Bruno Fernandes","Man United","🇵🇹 Portugal",86,87,84,74],
+["Gavi","Barcelona","🇪🇸 Spain",86,86,89,70],
+["Vitinha","PSG","🇵🇹 Portugal",86,87,86,70],
+["Declan Rice","Arsenal","🏴 England",86,82,78,87],
+["İlkay Gündoğan","Man City","🇩🇪 Germany",86,88,84,72],
+["Bernardo Silva","Man City","🇵🇹 Portugal",86,86,90,68],
+["Dominik Szoboszlai","Liverpool","🇭🇺 Hungary",85,84,84,80],
+["Ryan Gravenberch","Liverpool","🇳🇱 Netherlands",85,82,85,80],
+["Sandro Tonali","Newcastle","🇮🇹 Italy",85,83,83,84],
+["Alexis Mac Allister","Liverpool","🇦🇷 Argentina",85,84,84,80],
+["Jamal Musiala","Bayern Munich","🇩🇪 Germany",87,82,93,66],
+["Nicolò Zaniolo","Atalanta","🇮🇹 Italy",80,78,82,78],
+["Enzo Fernández","Chelsea","🇦🇷 Argentina",84,84,82,78],
+["Moises Caicedo","Chelsea","🇪🇨 Ecuador",84,80,80,86],
+["Cole Palmer","Chelsea","🏴 England",86,85,88,68],
+["Xavi Simons","RB Leipzig","🇳🇱 Netherlands",84,83,88,64],
+["Youri Tielemans","Aston Villa","🇧🇪 Belgium",83,84,82,76],
+["Granit Xhaka","Bayer Leverkusen","🇨🇭 Switzerland",83,84,78,80],
+["Adrien Rabiot","Marseille","🇫🇷 France",83,81,80,84],
+["Marcel Sabitzer","Dortmund","🇦🇹 Austria",82,82,82,78],
+["Julian Brandt","Dortmund","🇩🇪 Germany",83,84,86,64],
+["Pascal Groß","Dortmund","🇩🇪 Germany",81,84,78,70],
+["Teun Koopmeiners","Juventus","🇳🇱 Netherlands",84,84,80,78],
+["Manuel Locatelli","Juventus","🇮🇹 Italy",82,84,78,76],
+["Weston McKennie","Juventus","🇺🇸 USA",80,78,76,84],
+["Hakan Çalhanoğlu","Inter Milan","🇹🇷 Turkey",85,87,82,74],
+["Henrikh Mkhitaryan","Inter Milan","🇦🇲 Armenia",82,83,82,72],
+["Stanislav Lobotka","Napoli","🇸🇰 Slovakia",83,85,85,72],
+["André-Frank Zambo Anguissa","Napoli","🇨🇲 Cameroon",83,80,80,87],
+["Scott McTominay","Napoli","🏴 Scotland",81,77,76,84],
+["Tijjani Reijnders","AC Milan","🇳🇱 Netherlands",83,83,83,74],
+["Ruben Loftus-Cheek","AC Milan","🏴 England",80,78,80,85],
+["Aurélien Tchouaméni","Real Madrid","🇫🇷 France",85,83,78,87],
+["Eduardo Camavinga","Real Madrid","🇫🇷 France",85,83,86,82],
+["Dani Olmo","Barcelona","🇪🇸 Spain",85,85,87,68],
+["Fermín López","Barcelona","🇪🇸 Spain",81,80,84,70],
+["Martin Zubimendi","Arsenal","🇪🇸 Spain",84,85,79,80],
+["Mikel Merino","Arsenal","🇪🇸 Spain",83,83,79,84],
+["Kai Havertz","Arsenal","🇩🇪 Germany",84,80,82,80],
+["James Maddison","Tottenham","🏴 England",83,85,85,66],
+["Yves Bissouma","Tottenham","🇲🇱 Mali",80,78,80,82],
+["Pape Matar Sarr","Tottenham","🇸🇳 Senegal",79,77,80,76],
+["Bruno Guimarães","Newcastle","🇧🇷 Brazil",85,85,82,82],
+["Joelinton","Newcastle","🇧🇷 Brazil",82,78,78,88],
+["Joe Willock","Newcastle","🏴 England",77,76,78,74],
+["Kobbie Mainoo","Man United","🏴 England",81,80,84,76],
+["Casemiro","Man United","🇧🇷 Brazil",83,81,72,87],
+["Christian Eriksen","Man United","🇩🇰 Denmark",81,86,79,62],
+["John McGinn","Aston Villa","🏴 Scotland",81,79,80,80],
+["Boubacar Kamara","Aston Villa","🇫🇷 France",81,80,78,82],
+["Amadou Onana","Aston Villa","🇧🇪 Belgium",81,77,76,88],
+["Carlos Baleba","Brighton","🇨🇲 Cameroon",79,77,80,82],
+["Kaoru Mitoma","Brighton","🇯🇵 Japan",83,78,90,70],
+["Alex Iwobi","Fulham","🇳🇬 Nigeria",79,78,82,72],
+["Andreas Pereira","Fulham","🇧🇷 Brazil",78,80,80,68],
+["Mateo Kovacic","Man City","🇭🇷 Croatia",84,85,86,74],
+["Matheus Nunes","Man City","🇵🇹 Portugal",80,78,82,80],
+["Morgan Gibbs-White","Nottingham Forest","🏴 England",81,80,84,72],
+["Elliot Anderson","Nottingham Forest","🏴 England",77,77,80,74],
+["Lucas Paquetá","West Ham","🇧🇷 Brazil",83,83,86,74],
+["Tomas Soucek","West Ham","🇨🇿 Czechia",79,74,64,88],
+["Idrissa Gueye","Everton","🇸🇳 Senegal",77,75,76,80],
+["Jean-Philippe Mateta","Crystal Palace","🇫🇷 France",78,74,76,80],
+["Adam Wharton","Crystal Palace","🏴 England",79,82,80,70],
+["Christian Nørgaard","Brentford","🇩🇰 Denmark",77,76,68,84],
+["Joao Gomes","Wolves","🇧🇷 Brazil",78,74,80,84],
+],
+ATT: [
+["Erling Haaland","Man City","🇳🇴 Norway",94,95,89,80],
+["Kylian Mbappé","Real Madrid","🇫🇷 France",93,90,97,93],
+["Vinicius Jr","Real Madrid","🇧🇷 Brazil",92,84,95,95],
+["Lamine Yamal","Barcelona","🇪🇸 Spain",90,82,88,92],
+["Mohamed Salah","Liverpool","🇪🇬 Egypt",90,87,90,88],
+["Harry Kane","Bayern Munich","🏴 England",90,93,70,79],
+["Robert Lewandowski","Barcelona","🇵🇱 Poland",89,92,74,82],
+["Lautaro Martínez","Inter Milan","🇦🇷 Argentina",89,88,77,85],
+["Bukayo Saka","Arsenal","🏴 England",89,82,86,87],
+["Phil Foden","Man City","🏴 England",89,83,83,89],
+["Son Heung-min","Tottenham","🇰🇷 South Korea",88,86,88,84],
+["Rafael Leão","AC Milan","🇵🇹 Portugal",88,80,94,89],
+["Ousmane Dembélé","PSG","🇫🇷 France",87,80,93,89],
+["Antoine Griezmann","Atletico Madrid","🇫🇷 France",87,84,77,84],
+["Raphinha","Barcelona","🇧🇷 Brazil",87,81,88,87],
+["Victor Osimhen","Napoli","🇳🇬 Nigeria",87,86,92,79],
+["Julián Álvarez","Atletico Madrid","🇦🇷 Argentina",87,85,84,86],
+["Alexander Isak","Newcastle","🇸🇪 Sweden",87,86,88,84],
+["Rodrygo","Real Madrid","🇧🇷 Brazil",86,81,87,87],
+["Dušan Vlahović","Juventus","🇷🇸 Serbia",86,88,78,78],
+["Ollie Watkins","Aston Villa","🏴 England",86,84,87,80],
+["Leroy Sané","Bayern Munich","🇩🇪 Germany",86,79,93,89],
+["Nico Williams","Athletic Bilbao","🇪🇸 Spain",85,78,94,88],
+["Gabriel Martinelli","Arsenal","🇧🇷 Brazil",85,81,91,82],
+["Marcus Rashford","Man United","🏴 England",85,80,90,83],
+["Serhou Guirassy","Dortmund","🇬🇳 Guinea",85,87,82,76],
+["Randal Kolo Muani","PSG","🇫🇷 France",84,82,90,80],
+["Cody Gakpo","Liverpool","🇳🇱 Netherlands",84,80,82,83],
+["Darwin Núñez","Liverpool","🇺🇾 Uruguay",84,82,92,76],
+["Luis Díaz","Liverpool","🇨🇴 Colombia",85,80,90,88],
+["Nicolas Jackson","Chelsea","🇸🇳 Senegal",82,79,88,78],
+["Christopher Nkunku","Chelsea","🇫🇷 France",84,83,84,87],
+["Pedro Neto","Chelsea","🇵🇹 Portugal",82,76,89,86],
+["Federico Chiesa","Liverpool","🇮🇹 Italy",83,79,85,82],
+["Kingsley Coman","Bayern Munich","🇫🇷 France",84,79,91,88],
+["Michael Olise","Bayern Munich","🇫🇷 France",85,81,84,89],
+["Jonathan David","Lille","🇨🇦 Canada",83,84,86,80],
+["Bradley Barcola","PSG","🇫🇷 France",83,78,92,85],
+["Marcus Thuram","Inter Milan","🇫🇷 France",85,83,86,80],
+["Marko Arnautović","Inter Milan","🇦🇹 Austria",78,79,64,74],
+["Romelu Lukaku","Napoli","🇧🇪 Belgium",84,86,80,74],
+["Álvaro Morata","AC Milan","🇪🇸 Spain",83,84,78,76],
+["Christian Pulisic","AC Milan","🇺🇸 USA",84,80,85,87],
+["Jadon Sancho","Chelsea","🏴 England",81,76,80,86],
+["Karim Adeyemi","Dortmund","🇩🇪 Germany",82,78,95,84],
+["Donyell Malen","Dortmund","🇳🇱 Netherlands",82,81,88,83],
+["Loïs Openda","RB Leipzig","🇧🇪 Belgium",84,83,93,80],
+["Benjamin Šeško","RB Leipzig","🇸🇮 Slovenia",83,83,86,76],
+["Viktor Gyökeres","Sporting CP","🇸🇪 Sweden",85,86,87,78],
+["Rasmus Højlund","Man United","🇩🇰 Denmark",80,79,86,74],
+["Amad Diallo","Man United","🇨🇮 Ivory Coast",79,76,84,85],
+["Anthony Gordon","Newcastle","🏴 England",83,79,91,84],
+["Callum Wilson","Newcastle","🏴 England",79,82,80,74],
+["Dominic Solanke","Tottenham","🏴 England",82,82,78,78],
+["Brennan Johnson","Tottenham","🏴 Wales",80,78,89,80],
+["Dejan Kulusevski","Tottenham","🇸🇪 Sweden",83,79,82,85],
+["Leandro Trossard","Arsenal","🇧🇪 Belgium",83,81,80,85],
+["Gabriel Jesus","Arsenal","🇧🇷 Brazil",82,80,80,85],
+["Evanilson","Bournemouth","🇧🇷 Brazil",79,79,82,78],
+["Antoine Semenyo","Bournemouth","🇬🇭 Ghana",79,77,88,80],
+["Matheus Cunha","Wolves","🇧🇷 Brazil",82,80,84,86],
+["Jarrod Bowen","West Ham","🏴 England",83,82,84,82],
+["Chris Wood","Nottingham Forest","🇳🇿 New Zealand",78,81,64,70],
+["Yoane Wissa","Brentford","🇨🇩 DR Congo",79,79,84,80],
+["Bryan Mbeumo","Brentford","🇨🇲 Cameroon",82,81,85,82],
+["Danny Welbeck","Brighton","🏴 England",77,77,74,78],
+["João Pedro","Brighton","🇧🇷 Brazil",81,80,80,82],
+["Beto","Everton","🇵🇹 Portugal",75,76,80,70],
+["Raúl Jiménez","Fulham","🇲🇽 Mexico",77,78,68,76],
+["Rodrigo Muniz","Fulham","🇧🇷 Brazil",76,77,78,72],
+["Ademola Lookman","Atalanta","🇳🇬 Nigeria",84,81,87,86],
+["Mateo Retegui","Atalanta","🇮🇹 Italy",82,84,76,76],
+["Charles De Ketelaere","Atalanta","🇧🇪 Belgium",81,78,80,84],
+],
+};
+
+/* Expand compact rows into objects the game uses */
+const DB = {};
+for(const pos of ['GK','DEF','MID','ATT']){
+  const [l1,l2,l3] = STAT_LABELS[pos];
+  DB[pos] = RAW[pos].map(row => ({
+    n: row[0], c: row[1], nat: row[2], r: row[3],
+    s: { [l1]: row[4], [l2]: row[5], [l3]: row[6] }
+  }));
+}
+
+const FORMATIONS = {'5v5':{GK:1,DEF:2,MID:1,ATT:1},'7v7':{GK:1,DEF:2,MID:2,ATT:2},'11v11':{GK:1,DEF:4,MID:3,ATT:3}};
+const BUDGET = 1000;
+const POS_ORDER = ['GK','DEF','MID','ATT'];
+
+/* Out-of-position penalty by positional distance */
+const POS_DIST = {
+  GK: {GK:0,DEF:2,MID:3,ATT:3},
+  DEF:{GK:2,DEF:0,MID:1,ATT:2},
+  MID:{GK:3,DEF:1,MID:0,ATT:1},
+  ATT:{GK:3,DEF:2,MID:1,ATT:0},
+};
+const PENALTY = {0:0, 1:6, 2:13, 3:24};
+function effRating(fb, slotPos){
+  return Math.max(40, fb.r - PENALTY[POS_DIST[fb.pos][slotPos]]);
+}
+
+/* ═══════════ GAME STATE ═══════════ */
+let G = {
+  mode:null, names:['',''], squadSize:0,
+  budgets:[BUDGET,BUDGET], spent:[0,0],
+  teams:[[],[]], queue:[], backlog:[], phase:'main', idx:0,
+  // live auction
+  curBid:0, curBidder:-1, turn:0, openPasses:0, log:[],
+  // assignment
+  slots:[], assign:[[],[]], assignPi:0,
+  // cross-cutting: which screen is active (set by showScreen), the sold/unsold
+  // popup (set by finishLot/showBacklogIntro), and simulation replay data
+  stage:'playmode', overlay:null, simEvents:null, simScorers:null,
+  rev:0,
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   ONLINE MULTIPLAYER — thin sync layer over the existing game logic.
+   Design: one Supabase row per room holds the ENTIRE game state as JSON.
+   Whichever player's action is legal right now (per G.turn / G.assignPi /
+   host-only meta transitions) mutates G locally exactly as in local-mode,
+   then pushState() writes the whole G to that row. The other client is
+   subscribed to that row and, on change, merges it into its own G and
+   re-runs only the PURE RENDER functions for the current G.stage — never
+   the decision logic — so nothing is ever double-applied.
+═══════════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://yklobeayaqqpydmnqoec.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_l9TYLhTRdNBb1iph0Nn5Fw_fU6_DJ78';
+const ROOM_TABLE = 'football_rooms';
+let sb = null;
+try { sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null; }
+catch(e){ sb = null; }
+
+// NET is null in local (same-device) mode. In online mode it holds this
+// client's identity within the room: {code, myIndex (0=host,1=guest), channel}.
+let NET = null;
+let simStarted = false;   // guards against replaying the match animation twice
+
+function isOnline(){ return NET !== null; }
+function isHost(){ return NET !== null && NET.myIndex===0; }
+
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to read aloud
+function genRoomCode(){
+  let s=''; for(let i=0;i<4;i++) s+=CODE_ALPHABET[Math.floor(Math.random()*CODE_ALPHABET.length)];
+  return s;
+}
+
+function netError(msg){
+  const el=document.getElementById('oe-error');
+  if(el) el.textContent = msg;
+  console.error('[online]', msg);
+}
+
+function enterOnlineEntry(){
+  if(!sb){
+    netError('Could not load the online-play library (no internet connection?). Try refreshing, or play locally instead.');
+  }
+  showScreen('online-entry');
+  const saved = loadSavedRoom();
+  const rejoinCard = document.getElementById('oe-rejoin-card');
+  if(saved){
+    rejoinCard.style.display='';
+    document.getElementById('oe-rejoin-note').innerHTML =
+      `You were previously in room <strong style="color:var(--gold)">${saved.code}</strong> as <strong>${saved.name}</strong>.`;
+  } else {
+    rejoinCard.style.display='none';
+  }
+  oeCheck();
+}
+function oeCheck(){
+  const name=document.getElementById('oe-name').value.trim();
+  const code=document.getElementById('oe-code').value.trim();
+  document.getElementById('oe-create-btn').disabled = !name || !sb;
+  document.getElementById('oe-join-btn').disabled = !name || code.length<4 || !sb;
+}
+
+function saveRoom(code,myIndex,name){
+  try{ localStorage.setItem('faOnlineRoom', JSON.stringify({code,myIndex,name})); }catch(e){}
+}
+function loadSavedRoom(){
+  try{ return JSON.parse(localStorage.getItem('faOnlineRoom')||'null'); }catch(e){ return null; }
+}
+function forgetSavedRoom(){
+  try{ localStorage.removeItem('faOnlineRoom'); }catch(e){}
+  document.getElementById('oe-rejoin-card').style.display='none';
+}
+async function rejoinSavedRoom(){
+  const saved=loadSavedRoom();
+  if(!saved) return;
+  document.getElementById('oe-name').value=saved.name;
+  const {data,error} = await sb.from(ROOM_TABLE).select('*').eq('code',saved.code).single();
+  if(error || !data){ netError('That room no longer exists.'); forgetSavedRoom(); return; }
+  NET = {code:saved.code, myIndex:saved.myIndex, channel:null};
+  applyRemoteRow(data);
+  subscribeRoom(saved.code);
+  routeToStage();
+}
+
+async function createRoom(){
+  if(!sb){ netError('Online play needs an internet connection.'); return; }
+  const name=document.getElementById('oe-name').value.trim();
+  if(!name) return;
+  netError('');
+  let code, tries=0;
+  const initialState = {
+    ...structuredClone(G),
+    names:[name,''], joined:[true,false], mode:null, stage:'lobby',
+  };
+  while(tries<6){
+    code = genRoomCode();
+    const {error} = await sb.from(ROOM_TABLE).insert({code, state:initialState, rev:0});
+    if(!error){ break; }
+    if(error.code!=='23505'){ netError('Could not create the room: '+error.message); return; }
+    tries++;
+  }
+  if(tries>=6){ netError('Could not find a free room code — please try again.'); return; }
+  NET = {code, myIndex:0, channel:null};
+  G = initialState; G.rev=0;
+  saveRoom(code,0,name);
+  subscribeRoom(code);
+  showLobby();
+}
+
+async function joinRoom(){
+  if(!sb){ netError('Online play needs an internet connection.'); return; }
+  const name=document.getElementById('oe-name').value.trim();
+  const code=document.getElementById('oe-code').value.trim().toUpperCase();
+  if(!name || !code) return;
+  netError('');
+  const {data,error} = await sb.from(ROOM_TABLE).select('*').eq('code',code).single();
+  if(error || !data){ netError('No room found with that code. Double-check it with your opponent.'); return; }
+  if(data.state.joined && data.state.joined[1] && data.state.names[1]!==name){
+    netError('That room already has two players.'); return;
+  }
+  const newState = {...data.state, names:[data.state.names[0],name], joined:[true,true]};
+  const {data:upd,error:err2} = await sb.from(ROOM_TABLE)
+    .update({state:newState, rev:data.rev+1}).eq('code',code).eq('rev',data.rev).select().single();
+  if(err2 || !upd){ netError('Room changed while joining — please try again.'); return; }
+  NET = {code, myIndex:1, channel:null};
+  G = newState; G.rev = data.rev+1;
+  saveRoom(code,1,name);
+  subscribeRoom(code);
+  routeToStage();
+}
+
+function subscribeRoom(code){
+  if(NET.channel) return;
+  NET.channel = sb.channel('room-'+code)
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:ROOM_TABLE, filter:`code=eq.${code}`},
+      payload => { if(payload.new.rev > (G.rev||0)) applyRemoteRow(payload.new); })
+    .subscribe();
+}
+
+// Writes the whole G to Supabase using optimistic concurrency (CAS on rev).
+// On a lost race, refetches the canonical row and re-renders from it rather
+// than silently clobbering the other player's update.
+async function pushState(){
+  if(!NET) return;
+  const newRev = (G.rev||0)+1;
+  const payload = structuredClone(G);
+  const {data,error} = await sb.from(ROOM_TABLE)
+    .update({state:payload, rev:newRev}).eq('code',NET.code).eq('rev',G.rev||0).select().single();
+  if(error || !data){
+    const {data:fresh} = await sb.from(ROOM_TABLE).select('*').eq('code',NET.code).single();
+    if(fresh) applyRemoteRow(fresh);
+    return;
+  }
+  G.rev = newRev;
+}
+
+function applyRemoteRow(row){
+  const incoming = row.state;
+  G = {...G, ...incoming};
+  G.rev = row.rev;
+  routeToStage();
+}
+
+// Re-runs only PURE RENDER functions for the current stage — safe to call for
+// either the acting client (right after a local mutation) or the passive one
+// (after receiving a remote update). Never re-runs decision/mutation logic.
+function routeToStage(){
+  // The sold/unsold popup is a fixed-position modal, independent of which
+  // .screen div is active — a stage change away from 'auction' must explicitly
+  // hide it too, or a client that never clicked "Next" itself gets stuck behind it.
+  if(!(G.stage==='auction' && G.overlay)) document.getElementById('overlay').classList.remove('show');
+
+  switch(G.stage){
+    case 'lobby': showLobby(); return;
+    case 'auction':
+      showScreen('auction');
+      renderDots(); renderSidebar();
+      if(G.overlay){ renderOverlay(); }
+      else { showBidControls(); renderBidState(); renderBidLog(); }
+      return;
+    case 'assign':
+      showScreen('assign');
+      renderAssignGate();
+      return;
+    case 'teams':
+      showTeams();
+      return;
+    case 'simulation':
+      if(!simStarted && G.simEvents){
+        simStarted = true;
+        renderSimHeader();
+        animateSim(G.simEvents, G.simScorers);
+      }
+      return;
+    default: return;
+  }
+}
+
+/* ═══════════ LOBBY ═══════════ */
+function showLobby(){
+  showScreen('lobby');
+  document.getElementById('lb-code').textContent = NET.code;
+  document.getElementById('lb-name-0').textContent = G.names[0] || '—';
+  document.getElementById('lb-name-1').textContent = G.joined && G.joined[1] ? G.names[1] : 'Waiting…';
+
+  const hostControls=document.getElementById('lb-host-controls');
+  const guestWait=document.getElementById('lb-guest-wait');
+  hostControls.style.display = isHost() ? '' : 'none';
+  guestWait.style.display = isHost() ? 'none' : '';
+
+  if(isHost()){
+    document.querySelectorAll('#lb-mode-grid .mode-card').forEach(c=>{
+      c.classList.toggle('selected', c.querySelector('.mode-size').textContent===G.mode);
+    });
+    const bothJoined = G.joined && G.joined[1];
+    document.getElementById('lb-start-btn').disabled = !(G.mode && bothJoined);
+  }
+}
+function lobbySelectMode(m,el){
+  G.mode=m;
+  document.querySelectorAll('#lb-mode-grid .mode-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('lb-start-btn').disabled = !(G.joined && G.joined[1]);
+  pushState();
+}
+function hostStartOnlineGame(){
+  if(!isHost() || !G.mode || !(G.joined && G.joined[1])) return;
+  const f=FORMATIONS[G.mode];
+  G.squadSize = POS_ORDER.reduce((s,p)=>s+f[p],0);
+  G.slots = POS_ORDER.flatMap(p=>Array(f[p]).fill(p));
+  buildPool();
+  showScreen('auction');
+  renderSidebar(); renderDots();
+  startLot();   // every path through startLot() ends in exactly one pushState() call
+}
+
+/* ═══════════ SETUP ═══════════ */
+function selectMode(m, el){
+  G.mode = m;
+  document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  checkStart();
+}
+function checkStart(){
+  const a=document.getElementById('name-p1').value.trim();
+  const b=document.getElementById('name-p2').value.trim();
+  document.getElementById('start-btn').disabled = !(G.mode && a && b);
+}
+function startGame(){
+  G.names[0]=document.getElementById('name-p1').value.trim();
+  G.names[1]=document.getElementById('name-p2').value.trim();
+  const f=FORMATIONS[G.mode];
+  G.squadSize = POS_ORDER.reduce((s,p)=>s+f[p],0);
+  G.slots = POS_ORDER.flatMap(p=>Array(f[p]).fill(p));
+  buildPool();
+  document.getElementById('ov-next-btn').onclick = advanceAuction;
+  showScreen('auction');
+  renderSidebar(); renderDots(); startLot();
+}
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
+function buildPool(){
+  const f=FORMATIONS[G.mode], pool=[];
+  for(const pos of POS_ORDER){
+    shuffle(DB[pos]).slice(0,f[pos]*2).forEach(p=>pool.push({...p,pos}));
+  }
+  G.queue = shuffle(pool);
+  G.backlog = []; G.phase = 'main'; G.idx = 0;
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  G.stage = id;   // tracked separately from G.phase (which tracks main/backlog auction round)
+}
+
+/* ═══════════ BID LIMITS ═══════════ */
+function slotsLeft(pi){ return G.squadSize - G.teams[pi].length; }
+function teamFull(pi){ return slotsLeft(pi) <= 0; }
+/* Reserve rule: always keep 1 coin per remaining slot after this purchase */
+function maxBid(pi){
+  if(teamFull(pi)) return 0;
+  return Math.max(0, G.budgets[pi] - (slotsLeft(pi) - 1));
+}
+function canParticipate(pi){ return !teamFull(pi) && maxBid(pi) >= 1; }
+
+/* ═══════════ RENDER ═══════════ */
+function rCol(r){return r>=90?'#f59e0b':r>=85?'#22c55e':r>=80?'#60a5fa':'#94a3b8'}
+
+function renderSidebar(){
+  for(let pi=0;pi<2;pi++){
+    document.getElementById(`sb-name-${pi}`).textContent=G.names[pi];
+    document.getElementById(`sb-budget-${pi}`).textContent=G.budgets[pi].toLocaleString();
+    document.getElementById(`sb-spent-${pi}`).textContent=`Spent: ${G.spent[pi]}`;
+    document.getElementById(`bar-${pi}`).style.width=(G.budgets[pi]/BUDGET*100)+'%';
+    document.getElementById(`sq-${pi}`).innerHTML=
+      `Squad: <b>${G.teams[pi].length}</b>/${G.squadSize}` + (teamFull(pi)?' ✅':'');
+    document.getElementById(`roster-${pi}`).innerHTML =
+      [...G.teams[pi]].sort((a,b)=>POS_ORDER.indexOf(a.pos)-POS_ORDER.indexOf(b.pos))
+      .map(t=>`<div class="roster-row">
+        <span class="roster-pos pos-${t.pos}">${t.pos}</span>
+        <span class="roster-name">${t.n.split(' ').slice(-1)[0]} <b style="color:var(--gold)">${t.r}</b></span>
+      </div>`).join('');
+  }
+}
+function renderDots(){
+  document.getElementById('a-dots').innerHTML =
+    G.queue.map((_,i)=>`<div class="a-dot${i<G.idx?' done':i===G.idx?' cur':''}"></div>`).join('');
+  const pill = G.phase==='backlog' ? `<span class="phase-pill">📦 BACKLOG ROUND</span>` : '';
+  const bl   = G.backlog.length ? `<span class="backlog-pill">${G.backlog.length} in backlog</span>` : '';
+  document.getElementById('a-ctr').innerHTML =
+    `${pill}Footballer ${Math.min(G.idx+1,G.queue.length)} of ${G.queue.length}${bl}`;
+}
+
+/* ═══════════ START A LOT ═══════════ */
+function startLot(){
+  const p=G.queue[G.idx];
+  const badge=document.getElementById('fc-pos');
+  badge.textContent=p.pos; badge.className='pos-badge pos-'+p.pos;
+  document.getElementById('fc-name').textContent=p.n;
+  document.getElementById('fc-club').textContent=p.c;
+  document.getElementById('fc-nation').textContent=p.nat;
+  document.getElementById('fc-rating').textContent=p.r;
+  document.getElementById('fc-stats').innerHTML=Object.entries(p.s).map(([k,v])=>
+    `<div><div class="stat-v" style="color:${rCol(v)}">${v}</div><div class="stat-n">${k}</div></div>`).join('');
+  document.getElementById('fc-natural').textContent=`Natural position: ${p.pos} — you can play them anywhere, at a cost.`;
+
+  G.curBid=0; G.curBidder=-1; G.openPasses=0; G.log=[];
+  document.getElementById('bid-log').innerHTML='';
+
+  const c0=canParticipate(0), c1=canParticipate(1);
+
+  // Nobody can bid (shouldn't happen with reserve rule, but safe)
+  if(!c0 && !c1){ finishLot(-1,0,true); return; }
+
+  // Only one can bid → uncontested, free
+  if(!c0 || !c1){
+    const w = c0?0:1;
+    if(isOnline()){ finishLot(w,0,false,true); return; }  // skip the local flash-note delay
+    document.getElementById('bid-area').style.display='none';
+    const note=document.getElementById('uncontested-note');
+    note.style.display='';
+    note.innerHTML=`${G.names[w?0:1]}'s squad is full — <strong style="color:var(--text)">${G.names[w]}</strong> takes ${p.n} uncontested, free of charge.`;
+    document.getElementById('cb-amt').textContent='0';
+    document.getElementById('cb-by').textContent='';
+    setTimeout(()=>finishLot(w,0,false,true),1200);
+    return;
+  }
+
+  showBidControls();
+  G.turn = G.idx % 2;   // alternate who opens
+  renderBidState();
+  if(isOnline()) pushState();
+}
+function showBidControls(){
+  document.getElementById('bid-area').style.display='';
+  document.getElementById('uncontested-note').style.display='none';
+}
+
+/* ═══════════ BID STATE UI ═══════════ */
+function renderBidState(){
+  const t=G.turn;
+  document.getElementById('cb-amt').textContent = G.curBidder<0 ? '—' : G.curBid.toLocaleString();
+  document.getElementById('cb-by').textContent  = G.curBidder<0 ? 'no bids yet' : `by ${G.names[G.curBidder]}`;
+  document.getElementById('cb-by').style.color  = G.curBidder<0 ? 'var(--muted)' : (G.curBidder?'var(--p2)':'var(--p1)');
+
+  const mustOpen = (G.phase==='backlog');   // no declining in the backlog round
+  const banner=document.getElementById('turn-banner');
+  banner.className='turn-banner '+(t?'tb-p2':'tb-p1');
+  banner.textContent = G.curBidder<0
+    ? (mustOpen ? `${G.names[t]} — you must open the bidding`
+                : `${G.names[t]} — bid or decline?`)
+    : `${G.names[t]} — raise or pass?`;
+
+  document.getElementById('bcard-0').classList.toggle('turn-active',t===0);
+  document.getElementById('bcard-1').classList.toggle('turn-active',t===1);
+
+  const mb=maxBid(t), min=G.curBid+1;
+  const inp=document.getElementById('bid-input');
+  inp.min=min; inp.max=mb; inp.value=Math.min(min,mb);
+  inp.placeholder=`Min ${min}`;
+
+  const myTurn = !isOnline() || t===NET.myIndex;
+  const canAfford = mb >= min && myTurn;
+  const passBtn = document.getElementById('pass-btn');
+  // Declining is allowed in the main round, or whenever they simply can't afford to bid
+  if(G.curBidder<0 && mustOpen && canAfford){
+    passBtn.style.display='none';
+  } else {
+    passBtn.style.display='';
+    passBtn.disabled = !myTurn;
+    passBtn.textContent = G.curBidder<0 ? 'Decline ✋' : 'Pass ✋';
+  }
+  document.getElementById('bid-btn').disabled = !canAfford;
+  document.getElementById('bid-btn').textContent = G.curBidder<0 ? 'Open Bid' : 'Raise';
+  inp.disabled = !canAfford;
+
+  document.getElementById('max-note').innerHTML = !myTurn
+    ? `<span style="color:var(--muted)">Waiting for ${G.names[t]}…</span>`
+    : canAfford
+    ? `Your max bid: <strong style="color:var(--text)">${mb.toLocaleString()}</strong> &nbsp;·&nbsp; ${slotsLeft(t)} slot${slotsLeft(t)===1?'':'s'} left to fill (${G.budgets[t].toLocaleString()} coins)`
+    : `<span style="color:#f87171">You can't match ${min} and still fill your squad — you must pass.</span>`;
+
+  const qr=document.getElementById('quick-raises');
+  qr.innerHTML = canAfford
+    ? [1,5,10,25,50,100].filter(v=>G.curBid+v<=mb)
+        .map(v=>`<div class="qr-btn" onclick="quickBid(${G.curBid+v})">${G.curBidder<0?'':'+'}${v}</div>`).join('')
+      + (mb>G.curBid?`<div class="qr-btn" onclick="quickBid(${mb})" style="border-color:var(--gold);color:var(--gold)">MAX ${mb}</div>`:'')
+    : '';
+  if(myTurn) inp.focus();
+}
+
+function quickBid(v){ document.getElementById('bid-input').value=v; placeBid(); }
+
+function placeBid(){
+  const t=G.turn;
+  if(isOnline() && t!==NET.myIndex) return;
+  const inp=document.getElementById('bid-input');
+  const v=parseInt(inp.value), min=G.curBid+1, mb=maxBid(t);
+  if(!v || v<min || v>mb){ flash(inp); return; }
+  G.curBid=v; G.curBidder=t;
+  addLog(t, `bids <b>${v.toLocaleString()}</b>`);
+  G.turn = 1-t;
+  renderBidState();
+  if(isOnline()) pushState();
+}
+
+function passBid(){
+  const t=G.turn;
+  if(isOnline() && t!==NET.myIndex) return;
+  if(G.curBidder<0){
+    // Nothing on the table yet — this is a decline, not a concession
+    addLog(t, `declines to bid`);
+    G.openPasses++;
+    const other=1-t;
+    if(G.openPasses>=2 || !canParticipate(other)){
+      finishLot(-1, 0, true);      // both declined → backlog
+      return;
+    }
+    G.turn=other;
+    renderBidState();
+    if(isOnline()) pushState();
+    return;
+  }
+  addLog(t, `passes ✋`);
+  finishLot(G.curBidder, G.curBid, false);
+}
+
+function addLog(pi,txt){
+  G.log.unshift({pi,txt});
+  renderBidLog();
+}
+function renderBidLog(){
+  document.getElementById('bid-log').innerHTML = G.log.map(e=>
+    `<div class="bl-row"><span class="bl-tag ${e.pi?'bl-p2':'bl-p1'}">${G.names[e.pi]}</span><span class="bl-txt">${e.txt}</span></div>`
+  ).join('');
+}
+
+function flash(el){ el.style.borderColor='#ef4444'; setTimeout(()=>el.style.borderColor='',800); }
+
+/* ═══════════ OVERLAY (pure render — safe to call from either client) ═══════════ */
+// G.overlay holds everything needed to redraw the "sold/unsold/backlog" popup.
+// Splitting decision-making (finishLot etc.) from rendering (renderOverlay) is what
+// lets a networked peer reproduce the exact same popup from synced state alone,
+// without re-running the logic that produced it (which would double-apply effects).
+function renderOverlay(){
+  const ov=G.overlay;
+  const overlayEl=document.getElementById('overlay');
+  if(!ov){ overlayEl.classList.remove('show'); return; }
+
+  const stamp=document.getElementById('sold-stamp');
+  stamp.textContent=ov.stampText; stamp.className='sold-stamp '+(ov.stampClass||'');
+  document.getElementById('ov-name').textContent=ov.name;
+  document.getElementById('ov-sub').textContent=ov.sub;
+  const banner=document.getElementById('ov-banner');
+  banner.className=ov.bannerClass;
+  banner.innerHTML=ov.bannerHTML;
+
+  const btn=document.getElementById('ov-next-btn');
+  const iCanDrive = !isOnline() || isHost();
+  btn.textContent=ov.nextLabel;
+  btn.style.display = iCanDrive ? '' : 'none';
+  let waitNote=document.getElementById('ov-wait-note');
+  if(!waitNote){
+    waitNote=document.createElement('div');
+    waitNote.id='ov-wait-note';
+    waitNote.className='bench-note';
+    waitNote.style.marginTop='8px';
+    btn.insertAdjacentElement('afterend', waitNote);
+  }
+  waitNote.textContent = iCanDrive ? '' : `Waiting for ${G.names[0]} to continue…`;
+
+  overlayEl.classList.add('show');
+}
+
+document.getElementById('ov-next-btn').onclick = onOverlayNext;
+function onOverlayNext(){
+  if(isOnline() && !isHost()) return;   // only the host drives round transitions online
+  if(!G.overlay) return;
+  const action = G.overlay.nextAction;
+  G.overlay = null;
+  document.getElementById('overlay').classList.remove('show');
+  if(action==='startBacklog') startBacklogRound();
+  else advanceAuction();
+}
+
+/* ═══════════ FINISH LOT ═══════════ */
+function finishLot(winner, price, unsold, uncontested){
+  const p=G.queue[G.idx];
+  let stampText, stampClass, bannerClass, bannerHTML;
+
+  if(unsold){
+    G.backlog.push(p);
+    stampText='UNSOLD'; stampClass='unsold';
+    bannerClass='win-banner win-free';
+    bannerHTML=`Neither player wanted <strong>${p.n}</strong> — into the 📦 backlog.
+      <span style="display:block;margin-top:5px;font-size:.82rem;color:var(--muted)">They'll come back up at the end of the auction.</span>`;
+  } else {
+    if(winner>=0){
+      G.teams[winner].push({...p});
+      G.budgets[winner]-=price;
+      G.spent[winner]+=price;
+    }
+    stampText='SOLD!'; stampClass='';
+    bannerClass=`win-banner win-p${winner+1}`;
+    bannerHTML = uncontested
+      ? `${G.names[winner]} takes <strong>${p.n}</strong> uncontested<span class="win-price">FREE</span>`
+      : `${G.names[winner]} signs <strong>${p.n}</strong><span class="win-price">${price.toLocaleString()} coins</span>`;
+  }
+
+  const last = G.idx>=G.queue.length-1;
+  const willBacklog = last && G.phase==='main' && G.backlog.length>0 &&
+                      (slotsLeft(0)>0 || slotsLeft(1)>0);
+
+  G.overlay = {
+    stampText, stampClass, bannerClass, bannerHTML,
+    name:p.n, sub:`${p.pos} · ${p.c} · ${p.nat} · Rating ${p.r}`,
+    nextLabel: !last ? '⏭ Next Footballer →' : (willBacklog ? '📦 Backlog Round →' : '📋 Set Line-ups →'),
+    nextAction: 'advance',
+  };
+
+  renderSidebar(); renderDots(); renderOverlay();
+  if(isOnline()) pushState();
+}
+
+function advanceAuction(){
+  G.overlay=null;
+  document.getElementById('overlay').classList.remove('show');
+  G.idx++;
+  if(G.idx>=G.queue.length){ endRound(); return; }
+  renderDots(); startLot();
+}
+
+/* ═══════════ END OF ROUND / BACKLOG ═══════════ */
+function endRound(){
+  const anySlots = slotsLeft(0)>0 || slotsLeft(1)>0;
+
+  // Nothing left over, or both squads already full → straight to line-ups
+  if(G.backlog.length===0 || !anySlots){ beginAssignment(0); return; }
+
+  // Safety net: a backlog round can't normally produce another backlog
+  // (opening bids are forced there), but if it somehow did, hand them out.
+  if(G.phase==='backlog'){
+    for(const fb of G.backlog){
+      const pi = slotsLeft(0) >= slotsLeft(1) ? 0 : 1;
+      if(slotsLeft(pi)>0) G.teams[pi].push({...fb});
+    }
+    G.backlog=[]; renderSidebar(); beginAssignment(0); return;
+  }
+
+  G.phase='backlog';
+  G.queue=shuffle(G.backlog);
+  G.backlog=[];
+  G.idx=0;
+  showBacklogIntro();
+}
+
+function showBacklogIntro(){
+  const n=G.queue.length;
+  const need=[slotsLeft(0),slotsLeft(1)];
+  G.overlay = {
+    stampText:'📦 BACKLOG', stampClass:'backlog',
+    name:'Unsold Round', sub:`${n} footballer${n===1?'':'s'} went unsold in the main auction`,
+    bannerClass:'win-banner win-free',
+    bannerHTML:`They go back under the hammer to fill the empty slots.
+      <span style="display:block;margin-top:8px;font-size:.85rem">
+        ${G.names[0]} needs <strong>${need[0]}</strong> · ${G.names[1]} needs <strong>${need[1]}</strong>
+      </span>
+      <span style="display:block;margin-top:8px;font-size:.8rem;color:var(--muted)">
+        Declining is off — you must open the bidding on anyone you can still fit.
+      </span>`,
+    nextLabel:'📦 Start Backlog Round →',
+    nextAction:'startBacklog',
+  };
+  renderOverlay();
+  if(isOnline()) pushState();
+}
+
+function startBacklogRound(){
+  document.getElementById('overlay').classList.remove('show');
+  renderDots(); startLot();
+}
+
+/* ═══════════ ASSIGNMENT PHASE ═══════════ */
+function beginAssignment(pi){
+  G.assignPi=pi;
+  G.assign[pi]=Array(G.slots.length).fill(null);
+  showScreen('assign');
+  if(isOnline()){
+    // Online: each player only ever drives their OWN turn's local painting.
+    // The other player's client finds out via resync → renderAssignGate().
+    if(pi===NET.myIndex){
+      paintAssignScreen(pi);
+      autoAssign();          // autoAssign() pushes state itself — don't double-push below
+    } else {
+      renderAssignGate();
+      pushState();           // nothing else will broadcast this transition otherwise
+    }
+    return;
+  }
+  paintAssignScreen(pi);
+  autoAssign();
+}
+function paintAssignScreen(pi){
+  document.getElementById('as-who').textContent=`${G.names[pi]}'s Line-up`;
+  document.getElementById('as-who').style.color = pi?'var(--p2)':'var(--p1)';
+  document.getElementById('as-next').textContent =
+    (!isOnline() && pi===0) ? 'Confirm — pass to '+G.names[1]+' →' : 'Confirm Lineup →';
+  document.getElementById('as-live').style.display='';
+  document.getElementById('as-waiting').style.display='none';
+}
+// Online-only: decide whether THIS client shows the live editor or a waiting message,
+// based on whose turn G.assignPi currently is. Safe to call from resync (pure render).
+function renderAssignGate(){
+  if(G.assignPi===NET.myIndex){
+    paintAssignScreen(G.assignPi);
+    const A=G.assign[G.assignPi];
+    if(A.every(v=>v===null)) autoAssign(); else renderAssign();
+  } else {
+    document.getElementById('as-live').style.display='none';
+    const w=document.getElementById('as-waiting');
+    w.style.display='';
+    w.innerHTML = `⏳ Waiting for <strong style="color:var(--text)">${G.names[G.assignPi]}</strong> to finish setting up their line-up…`;
+  }
+}
+
+function fitLabel(fb,slotPos){
+  const d=POS_DIST[fb.pos][slotPos];
+  if(d===0) return {cls:'fit-perfect',txt:`${fb.r}`};
+  return {cls:d===1?'fit-ok':'fit-bad', txt:`${effRating(fb,slotPos)} (−${PENALTY[d]})`};
+}
+
+function renderAssign(){
+  const pi=G.assignPi, team=G.teams[pi], A=G.assign[pi];
+  const grid=document.getElementById('assign-grid');
+  grid.innerHTML = G.slots.map((slotPos,si)=>{
+    const taken = new Set(A.filter((v,i)=>v!==null && i!==si));
+    const opts = ['<option value="">— choose —</option>'].concat(
+      team.map((fb,fi)=> taken.has(fi) ? '' :
+        `<option value="${fi}"${A[si]===fi?' selected':''}>${fb.n} · ${fb.pos} · ${fb.r}</option>`)
+    ).join('');
+    const fb = A[si]!==null ? team[A[si]] : null;
+    const fit = fb ? fitLabel(fb,slotPos) : {cls:'fit-empty',txt:'—'};
+    return `<div class="slot-row2">
+      <div class="slot-tag pos-${slotPos}">${slotPos}</div>
+      <select class="slot-sel" onchange="setSlot(${si},this.value)">${opts}</select>
+      <div class="fit-badge ${fit.cls}">${fit.txt}</div>
+    </div>`;
+  }).join('');
+
+  const filled=A.filter(v=>v!==null).length;
+  document.getElementById('as-bench').textContent = `${filled} of ${G.slots.length} slots filled`;
+  document.getElementById('as-next').disabled = filled<G.slots.length;
+}
+
+function setSlot(si,val){
+  if(isOnline() && G.assignPi!==NET.myIndex) return;
+  const A=G.assign[G.assignPi];
+  A[si] = val===''?null:parseInt(val);
+  renderAssign();
+  if(isOnline()) pushState();
+}
+
+function autoAssign(){
+  if(isOnline() && G.assignPi!==NET.myIndex) return;
+  const pi=G.assignPi, team=G.teams[pi];
+  const A=Array(G.slots.length).fill(null);
+  const usedP=new Set(), usedS=new Set();
+  const pairs=[];
+  G.slots.forEach((sp,si)=>team.forEach((fb,fi)=>pairs.push({si,fi,v:effRating(fb,sp)})));
+  pairs.sort((a,b)=>b.v-a.v);
+  for(const p of pairs){
+    if(usedS.has(p.si)||usedP.has(p.fi)) continue;
+    A[p.si]=p.fi; usedS.add(p.si); usedP.add(p.fi);
+  }
+  G.assign[pi]=A;
+  renderAssign();
+  if(isOnline()) pushState();
+}
+function clearAssign(){
+  if(isOnline() && G.assignPi!==NET.myIndex) return;
+  G.assign[G.assignPi]=Array(G.slots.length).fill(null);
+  renderAssign();
+  if(isOnline()) pushState();
+}
+
+function confirmAssign(){
+  if(isOnline() && G.assignPi!==NET.myIndex) return;
+  if(G.assignPi===0){ beginAssignment(1); return; }
+  if(isOnline()){ showTeams(); pushState(); return; }
+  showTeams();
+}
+
+/* ═══════════ LINEUP HELPERS ═══════════ */
+function lineup(pi){
+  return G.slots.map((sp,si)=>{
+    const fb=G.teams[pi][G.assign[pi][si]];
+    return {fb, slotPos:sp, eff:effRating(fb,sp), oop:POS_DIST[fb.pos][sp]>0};
+  });
+}
+
+/* ═══════════ TEAMS SCREEN ═══════════ */
+function showTeams(){
+  showScreen('teams');
+  const grid=document.getElementById('teams-grid');
+  grid.innerHTML='';
+  for(let pi=0;pi<2;pi++) grid.appendChild(teamCard(pi));
+  const iCanKickOff = !isOnline() || isHost();
+  document.getElementById('kickoff-btn').style.display = iCanKickOff ? '' : 'none';
+  document.getElementById('kickoff-wait').style.display = iCanKickOff ? 'none' : '';
+}
+function teamCard(pi){
+  const L=lineup(pi);
+  const avg=Math.round(L.reduce((s,x)=>s+x.eff,0)/L.length);
+  const div=document.createElement('div');
+  div.className='team-card '+(pi?'tc-p2':'tc-p1');
+  div.innerHTML=`
+    <div class="team-head">${G.names[pi]}'s XI</div>
+    ${L.map(x=>`<div class="tp-row">
+      <span class="pos-badge pos-${x.slotPos}" style="font-size:.6rem;padding:2px 7px">${x.slotPos}</span>
+      <span class="tp-name">${x.fb.n}${x.oop?` <span class="tp-oop">(nat. ${x.fb.pos})</span>`:''}</span>
+      <span class="tp-rtg">${x.eff}</span>
+    </div>`).join('')}
+    <div class="team-foot">
+      <span>Avg Rating: <span>${avg}</span></span>
+      <span>Coins left: <span style="color:${pi?'var(--p2)':'var(--p1)'}">${G.budgets[pi]}</span></span>
+    </div>`;
+  return div;
+}
+
+/* ═══════════ SIMULATION ═══════════ */
+function goToSim(){
+  if(isOnline() && !isHost()) return;   // only the host triggers kick-off
+  renderSimHeader();
+  simulate();
+}
+function renderSimHeader(){
+  showScreen('simulation');
+  document.getElementById('sim-t1').textContent=G.names[0]+"'s XI";
+  document.getElementById('sim-t2').textContent=G.names[1]+"'s XI";
+}
+function posAvg(L,pos){
+  const pp=L.filter(x=>x.slotPos===pos);
+  return pp.length?pp.reduce((s,x)=>s+x.eff,0)/pp.length:65;
+}
+function teamStr(pi){
+  const L=lineup(pi), w={GK:.15,DEF:.25,MID:.30,ATT:.30};
+  return POS_ORDER.reduce((s,pos)=>s+posAvg(L,pos)*w[pos],0);
+}
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+
+function simulate(){
+  const s0=teamStr(0), s1=teamStr(1);
+  const maxG={5:7,7:9,11:12}[parseInt(G.mode)]||8;
+  const combined=(s0+s1)/2;
+  const total=Math.max(0,Math.min(maxG,Math.round((combined-70)/3)+randInt(-2,4)));
+  const p0=Math.max(.18,Math.min(.82,(s0-s1)/18+.5+(Math.random()-.5)*.14));
+
+  const events=[], usedMin=new Set(), scorers=[[],[]];
+  for(let g=0;g<total;g++){
+    let m,t=0; do{m=randInt(1,89);}while(usedMin.has(m)&&++t<60);
+    usedMin.add(m);
+    const team=Math.random()<p0?0:1;
+    const L=lineup(team);
+    const elig=L.filter(x=>x.slotPos==='ATT'||x.slotPos==='MID');
+    // weight scorer choice by effective rating
+    const pool=elig.length?elig:L;
+    const tot=pool.reduce((s,x)=>s+x.eff,0);
+    let r=Math.random()*tot, sc=pool[0];
+    for(const x of pool){ r-=x.eff; if(r<=0){sc=x;break;} }
+    events.push({m,team,scorer:sc.fb.n});
+    scorers[team].push({p:sc.fb.n,m});
+  }
+  const evTypes=['save','tackle','chance','corner','foul','offside'];
+  for(let i=0;i<9;i++){
+    let m,t=0; do{m=randInt(1,89);}while(usedMin.has(m)&&++t<50);
+    if(t<50){usedMin.add(m);events.push({m,team:randInt(0,1),type:evTypes[randInt(0,evTypes.length-1)]});}
+  }
+  events.sort((a,b)=>a.m-b.m);
+  scorers.forEach(list=>list.sort((a,b)=>a.m-b.m));
+  if(isOnline()){
+    // Host computes the match once and broadcasts it — both clients replay the
+    // identical events/scorers locally, so both screens always agree on the result.
+    G.simEvents=events; G.simScorers=scorers;
+    pushState();
+  }
+  animateSim(events,scorers);
+}
+
+const CM={
+  goal:(t,sc,N)=>[`⚽ GOAL! <strong>${sc}</strong> finds the net for <strong>${N[t]}</strong>!`,
+                  `⚽ <strong>${sc}</strong> fires it home!`,
+                  `⚽ Sublime finish from <strong>${sc}</strong>!`],
+  save:(t,sc,N)=>[`🧤 Superb save — ${N[t]} denied!`,`🧤 The keeper stands tall.`],
+  tackle:(t,sc,N)=>[`💪 <strong>${N[t]}</strong> win it back with a crunching tackle.`,
+                    `Excellent defending from <strong>${N[t]}</strong>.`],
+  chance:(t,sc,N)=>[`😬 So close! <strong>${N[t]}</strong> inches away.`,`Great chance for <strong>${N[t]}</strong> — just wide!`],
+  corner:(t,sc,N)=>[`🚩 Corner to <strong>${N[t]}</strong>.`],
+  foul:(t,sc,N)=>[`🟡 Foul — free kick to <strong>${N[1-t]}</strong>.`],
+  offside:(t,sc,N)=>[`🚩 Offside against <strong>${N[t]}</strong>.`],
+};
+function pick(a){return a[randInt(0,a.length-1)]}
+
+function animateSim(events,scorers){
+  const feed=document.getElementById('commentary'), score=[0,0];
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i>=events.length){
+      clearInterval(iv);
+      document.getElementById('sim-min-lbl').textContent='Full Time! ⏱';
+      document.getElementById('sim-prog').style.width='100%';
+      setTimeout(()=>showResult(score,scorers),1400);
+      return;
+    }
+    const ev=events[i++];
+    document.getElementById('sim-prog').style.width=(ev.m/90*100).toFixed(1)+'%';
+    document.getElementById('sim-min-lbl').textContent=`${ev.m}'`;
+    const isGoal=!ev.type;
+    if(isGoal){
+      score[ev.team]++;
+      document.getElementById('sim-s1').textContent=score[0];
+      document.getElementById('sim-s2').textContent=score[1];
+    }
+    const item=document.createElement('div');
+    item.className='cm-item';
+    item.innerHTML=`<div class="cm-min${isGoal?' goal':''}">${ev.m}'</div>
+      <div class="cm-txt">${pick(CM[ev.type||'goal'](ev.team,ev.scorer,G.names))}</div>`;
+    feed.insertBefore(item,feed.firstChild);
+  },650);
+}
+
+/* ═══════════ RESULT ═══════════ */
+function showResult(score,scorers){
+  showScreen('result');
+  document.getElementById('rs-n1').textContent=G.names[0];
+  document.getElementById('rs-n2').textContent=G.names[1];
+  document.getElementById('rs-s1').textContent=score[0];
+  document.getElementById('rs-s2').textContent=score[1];
+  const v=document.getElementById('rs-verdict');
+  if(score[0]>score[1])      v.innerHTML=`<span class="rv-win">🏆 ${G.names[0]} Wins!</span>`;
+  else if(score[1]>score[0]) v.innerHTML=`<span class="rv-win">🏆 ${G.names[1]} Wins!</span>`;
+  else                       v.innerHTML=`<span class="rv-draw">🤝 It's a Draw!</span>`;
+  let html='';
+  for(let pi=0;pi<2;pi++) if(scorers[pi].length)
+    html+=`<div><strong style="color:${pi?'var(--p2)':'var(--p1)'}">${G.names[pi]}:</strong> `+
+      scorers[pi].map(s=>`${s.p} (${s.m}')`).join(', ')+'</div>';
+  document.getElementById('rs-scorers').innerHTML=html||'<div>No goals scored</div>';
+  const grid=document.getElementById('result-grid');
+  grid.innerHTML='';
+  for(let pi=0;pi<2;pi++) grid.appendChild(teamCard(pi));
+}
+</script>
+</body>
+</html>
